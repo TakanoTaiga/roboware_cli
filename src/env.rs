@@ -8,8 +8,8 @@ pub fn call_env(){
         
     if "build" == secound_arg {
         env_build();
-    }else{
-        
+    }else if "update" == secound_arg {
+        env_update();
     }
 }
 
@@ -33,15 +33,54 @@ fn env_build() {
         }
     }
 
-    if let Some(ref mut stderr) = child.stderr {
-        let reader = BufReader::new(stderr);
-        for line in reader.lines() {
-            eprintln!("Error: {}", line.unwrap());
-        }
-    }
-
     let status = child.wait().expect("Failed to wait on child");
     if !status.success() {
         eprintln!("Command exited with error: {:?}", status);
     }
+}
+
+fn env_update(){
+    {
+        let mut child = Command::new("git")
+        .arg("pull")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("Failed to execute command");
+
+        if let Some(ref mut stdout) = child.stdout {
+            let reader = BufReader::new(stdout);
+            for line in reader.lines() {
+                println!("{}", line.unwrap());
+            }
+        }
+
+        let status = child.wait().expect("Failed to wait on child");
+        if !status.success() {
+            eprintln!("Command exited with error: {:?}", status);
+        }
+    }
+
+    {
+        let mut child = Command::new("vcs")
+            .arg("pull")
+            .arg("src")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("Failed to execute command");
+
+        if let Some(ref mut stdout) = child.stdout {
+            let reader = BufReader::new(stdout);
+            for line in reader.lines() {
+                println!("{}", line.unwrap());
+            }
+        }
+
+        let status = child.wait().expect("Failed to wait on child");
+        if !status.success() {
+            eprintln!("Command exited with error: {:?}", status);
+        }
+    }
+    
 }
